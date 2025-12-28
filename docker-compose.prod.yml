@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     build:
@@ -10,6 +8,11 @@ services:
         limits:
           cpus: "1"
           memory: 1G
+    environment:
+      - NODE_ENV=production
+      # Ensure these match your server's actual URL/IP
+      - FRONTEND_URL=http://72.62.161.70
+      - CORS_ORIGIN=http://72.62.161.70
 
   frontend:
     build:
