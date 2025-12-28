@@ -9,11 +9,21 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   backend:
     build:
@@ -36,6 +46,7 @@ services:
       ACCESS_TOKEN_EXPIRY: 1h
       REFRESH_TOKEN_SECRET: change-me-refresh
       REFRESH_TOKEN_EXPIRY: 7d
+      WEBAUTHN_RP_ID: 72.62.161.70
       SESSION_SECRET: change-me-session
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -60,6 +71,40 @@ services:
       - backend
     ports:
       - "80:80"
+
+  mail-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bkeep
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_SSL: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_USERNAME: redis
+      REDIS_PASSWORD: redis
+      REDIS_DB: 0
+      REDIS_SSL: "false"
+      MAIL_QUEUE_ENABLED: "true"
+      MAIL_QUEUE_ATTEMPTS: 3
+      MAIL_QUEUE_BACKOFF_DELAY: 5000
+      EMAIL_FROM: info@bkeep.ca
+      EMAIL_FROM_NAME: BKeep
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    command: ["node", "-r", "dotenv/config", "dist/workers/mail.worker.js"]
 
 volumes:
   pgdata:
