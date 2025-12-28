@@ -54,6 +54,7 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built files and public assets
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/database/data ./dist/database/data
 COPY public ./public
 
 # Expose port
