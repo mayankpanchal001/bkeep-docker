@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      target: prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+
+  frontend:
+    build:
+      target: prod
+      args:
+        VITE_API_ENDPOINT: http://72.62.161.70/api/v1
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - backend
