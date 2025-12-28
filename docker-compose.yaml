@@ -92,8 +92,6 @@ services:
       DB_SSL: "false"
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_USERNAME: redis
-      REDIS_PASSWORD: redis
       REDIS_DB: 0
       REDIS_SSL: "false"
       MAIL_QUEUE_ENABLED: "true"
