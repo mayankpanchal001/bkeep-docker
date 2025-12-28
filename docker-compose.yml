@@ -1,84 +1,67 @@
 services:
-  # ---------------------------------------------------------------------------
-  # Database: PostgreSQL
-  # ---------------------------------------------------------------------------
   postgres:
-    image: postgres:15-alpine
-    container_name: bkeep_postgres
-    restart: always
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-myapp_test}
+      POSTGRES_DB: bkeep
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - pgdata:/var/lib/postgresql/data
 
-  # ---------------------------------------------------------------------------
-  # Cache/Queue: Redis
-  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: bkeep_redis
-    restart: always
-    volumes:
-      - redis_data:/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    ports:
+      - "6379:6379"
 
-  # ---------------------------------------------------------------------------
-  # Backend API
-  # ---------------------------------------------------------------------------
   backend:
     build:
       context: ./backend
-    container_name: bkeep_backend
+      dockerfile: Dockerfile
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - HOST=0.0.0.0
-      - PORT=8000
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
-      - DB_NAME=${DB_NAME:-myapp_test}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8000
+      API_PREFIX: /api/v1
+      CORS_ORIGIN: http://localhost
+      FRONTEND_URL: http://localhost
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bkeep
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_SSL: "false"
+      ACCESS_TOKEN_SECRET: change-me-access
+      ACCESS_TOKEN_EXPIRY: 1h
+      REFRESH_TOKEN_SECRET: change-me-refresh
+      REFRESH_TOKEN_EXPIRY: 7d
+      SESSION_SECRET: change-me-session
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      MAIL_QUEUE_ENABLED: "true"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app-network
+      - postgres
+      - redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend-logs:/app/logs
 
-  # ---------------------------------------------------------------------------
-  # Frontend
-  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
-    container_name: bkeep_frontend
-    networks:
-      - app-network
+      dockerfile: Dockerfile
+      args:
+        VITE_API_ENDPOINT: http://localhost:8000/api
+        VITE_ENVIRONMENT: production
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
 
 volumes:
-  postgres_data:
-  redis_data:
+  pgdata:
+  backend-logs:
 
-networks:
-  app-network:
-    driver: bridge

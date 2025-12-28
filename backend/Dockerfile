@@ -1,67 +1,23 @@
-# syntax=docker/dockerfile:1.7
-
-# -----------------------------------------------------------------------------
-# Base setup with pnpm and workspace
-# -----------------------------------------------------------------------------
-FROM node:20-alpine AS base
+FROM node:22-alpine AS deps
 WORKDIR /app
-ENV NODE_ENV=production
-
-# Enable corepack (pnpm)
 RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
-
-# Install dependencies separately for better caching
-FROM base AS deps
-ENV NODE_ENV=development
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# -----------------------------------------------------------------------------
-# Builder: compile TypeScript to dist
-# -----------------------------------------------------------------------------
-FROM base AS builder
-ENV NODE_ENV=development
-COPY --from=deps /app/node_modules ./node_modules
+FROM node:22-alpine AS builder
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
+COPY --from=deps /app/node_modules /app/node_modules
 COPY . .
-# Build server to dist
 RUN pnpm run build
 
-# -----------------------------------------------------------------------------
-# Development image
-# - Contains sources and dev dependencies
-# -----------------------------------------------------------------------------
-FROM base AS dev
-ENV NODE_ENV=development
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-EXPOSE 8000
-# Default dev command can be overridden by compose
-CMD ["pnpm", "dev"]
-
-# -----------------------------------------------------------------------------
-# Production runtime image
-# - Copies only built artifacts and production deps
-# -----------------------------------------------------------------------------
-FROM node:20-alpine AS prod
+FROM node:22-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV=production
 RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
-
-COPY package.json pnpm-lock.yaml* ./
-# Skip lifecycle scripts (e.g., husky prepare) during production install
-ENV PNPM_SKIP_LIFECYCLE_SCRIPTS=true HUSKY=0
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts
-
-# Copy built files and public assets
+ENV NODE_ENV=production
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/database/data ./dist/database/data
 COPY public ./public
-
-# Expose port
 EXPOSE 8000
-
-# Start server (env vars should be provided by orchestrator like Docker Compose)
-# dotenv is optional fallback for standalone runs
-CMD ["node", "dist/server.js"]
-
-
+CMD ["node","-r","dotenv/config","dist/server.js"]
