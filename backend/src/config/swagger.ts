@@ -14,10 +14,10 @@ const swaggerOptions: swaggerJsdoc.Options = {
       },
     },
     servers: [
-      // {
-      //   url: `https://bkeep.ca${env.API_PREFIX}`,
-      //   description: 'Production server (HTTPS)',
-      // },
+      {
+        url: `${env.API_PREFIX}`,
+        description: 'Current Server (Relative)',
+      },
       {
         url: `http://localhost:${env.PORT}${env.API_PREFIX}`,
         description: 'Local development server',
