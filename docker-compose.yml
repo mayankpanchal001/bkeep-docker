@@ -24,8 +24,8 @@ services:
       HOST: 0.0.0.0
       PORT: 8000
       API_PREFIX: /api/v1
-      CORS_ORIGIN: http://localhost
-      FRONTEND_URL: http://localhost
+      CORS_ORIGIN: http://72.62.161.70
+      FRONTEND_URL: http://72.62.161.70
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: bkeep
@@ -54,7 +54,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_ENDPOINT: http://localhost:8000/api
+        VITE_API_ENDPOINT: http://72.62.161.70
         VITE_ENVIRONMENT: production
     depends_on:
       - backend
@@ -64,4 +64,3 @@ services:
 volumes:
   pgdata:
   backend-logs:
-
