@@ -19,6 +19,7 @@ const allowedConnect = [
 
 const helmetMiddleware: RequestHandler = helmet({
   contentSecurityPolicy: {
+    useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
@@ -26,10 +27,17 @@ const helmetMiddleware: RequestHandler = helmet({
       imgSrc: ["'self'", "data:", "https:", "https://unpkg.com"],
       fontSrc: ["'self'", "https://unpkg.com"],
       connectSrc: allowedConnect,
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+      objectSrc: ["'none'"],
+      scriptSrcAttr: ["'none'"],
     },
   },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: false,
+  originAgentCluster: false,
 });
 
 export default helmetMiddleware;
