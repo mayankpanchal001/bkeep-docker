@@ -24,7 +24,7 @@ services:
       HOST: 0.0.0.0
       PORT: 8000
       API_PREFIX: /api/v1
-      CORS_ORIGIN: http://72.62.161.70
+      CORS_ORIGIN: http://72.62.161.70,http://72.62.161.70:80,http://72.62.161.70:8000
       FRONTEND_URL: http://72.62.161.70
       DB_HOST: postgres
       DB_PORT: 5432
